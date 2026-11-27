@@ -609,6 +609,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
 
     @Suppress("DEPRECATION")
     private fun updateExcludeFromRecents(value: Boolean?) {
+        val hide = value == true
         val taskId = activity?.taskId ?: return
         val am = getSystemService(GlobalState.application, ActivityManager::class.java)
         val task = am?.appTasks?.firstOrNull {
@@ -617,8 +618,12 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             } else {
                 it.taskInfo?.id == taskId
             }
+        } ?: return
+        val isCurrentlyExcluded =
+            ((task.taskInfo?.baseIntent?.flags ?: 0) and Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS) != 0
+        if (hide || isCurrentlyExcluded) {
+            task.setExcludeFromRecents(hide)
         }
-        task?.setExcludeFromRecents(value ?: false)
     }
 
     fun requestNotificationPermission(callback: (Boolean) -> Unit) = onMainThread {
